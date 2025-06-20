@@ -2,6 +2,7 @@
 #include "FS.h"
 #include "SD_MMC.h"
 #include "Arduino.h"
+#include <WiFi.h>
 
 #define PWDN_GPIO_NUM     32
 #define RESET_GPIO_NUM    -1
@@ -21,8 +22,24 @@
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
 
+// WiFi credentials
+const char* ssid = "YOUR_SSID";
+const char* password = "YOUR_PASSWORD";
+
 void setup() {
   Serial.begin(115200);
+
+  // Connect to WiFi
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.print("Connected! IP address: ");
+  Serial.println(WiFi.localIP());
+
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
