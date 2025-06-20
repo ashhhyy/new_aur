@@ -1,56 +1,82 @@
 import React, { useState, useEffect } from 'react';
 
+const BACKEND_URL = 'http://192.168.100.216:5000';
+
 const App: React.FC = () => {
   const [images, setImages] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
 
   const startRobot = async () => {
     try {
-      const response = await fetch('/api/start', { method: 'POST' });
+      const response = await fetch(`${BACKEND_URL}/start`, { method: 'POST' });
       if (response.ok) {
         setIsRunning(true);
+        setStatusMessage('Robot started');
       } else {
-        alert('Failed to start the robot');
+        const data = await response.json();
+        setStatusMessage(`Failed to start the robot: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
-      alert('Error starting the robot');
+      setStatusMessage('Error starting the robot');
     }
   };
 
   const stopRobot = async () => {
     try {
-      const response = await fetch('/api/stop', { method: 'POST' });
+      const response = await fetch(`${BACKEND_URL}/stop`, { method: 'POST' });
       if (response.ok) {
         setIsRunning(false);
+        setStatusMessage('Robot stopped');
       } else {
-        alert('Failed to stop the robot');
+        const data = await response.json();
+        setStatusMessage(`Failed to stop the robot: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
-      alert('Error stopping the robot');
+      setStatusMessage('Error stopping the robot');
     }
   };
 
   const fetchImages = async () => {
     try {
-      const response = await fetch('/api/camera/images');
+      const response = await fetch(`${BACKEND_URL}/images`);
       if (response.ok) {
         const data = await response.json();
         setImages(data.images || []);
       } else {
-        alert('Failed to fetch images');
+        setStatusMessage('Failed to fetch images');
       }
     } catch (error) {
-      alert('Error fetching images');
+      setStatusMessage('Error fetching images');
+    }
+  };
+
+  const fetchStatus = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/status`);
+      if (response.ok) {
+        const data = await response.json();
+        setIsRunning(data.motion_running);
+      }
+    } catch (error) {
+      // Ignore status fetch errors
     }
   };
 
   useEffect(() => {
     fetchImages();
+    fetchStatus();
+    const interval = setInterval(() => {
+      fetchImages();
+      fetchStatus();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f0f8ff', color: '#333' }}>
       <h1 style={{ color: '#007acc' }}>Underwater Robot Dashboard</h1>
+      <div style={{ marginBottom: '10px', minHeight: '24px' }}>{statusMessage}</div>
       <div style={{ marginBottom: '20px' }}>
         <button
           onClick={startRobot}
@@ -88,7 +114,7 @@ const App: React.FC = () => {
         {images.map((imgUrl, index) => (
           <img
             key={index}
-            src={imgUrl}
+            src={`${BACKEND_URL}/images/${imgUrl}`}
             alt={`Captured ${index}`}
             style={{ width: '200px', height: '150px', marginRight: '10px', marginBottom: '10px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #ccc' }}
           />

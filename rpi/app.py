@@ -16,19 +16,11 @@ import platform
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Detect if running on Raspberry Pi
-is_raspberry_pi = platform.machine().startswith('arm')
-
-if is_raspberry_pi:
-    logger.info("Running on Raspberry Pi - using hardware modules")
-    from motor_control import MotorControl
-    from sensors import MPU6050, UltrasonicSensor
-    from autonomous_logic import AutonomousLogic
-else:
-    logger.info("Running on non-Raspberry Pi system - using mock modules")
-    from motor_control_mock import MotorControl
-    from sensors_mock import MPU6050, UltrasonicSensor
-    from autonomous_logic_mock import AutonomousLogic
+# Force use of real hardware modules for actual drone control
+logger.info("Forcing use of real hardware modules for drone control")
+from motor_control import MotorControl
+from sensors import MPU6050, UltrasonicSensor
+from autonomous_logic import AutonomousLogic
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for web dashboard
@@ -37,7 +29,13 @@ motion_running = False
 motion_thread = None
 
 # Configuration
-IMAGE_DIRECTORY = "/path/to/esp32/images"  # Update this path to match ESP32-CAM SD card mount point
+import os
+
+UPLOAD_DIRECTORY = "./uploaded_images"
+if not os.path.exists(UPLOAD_DIRECTORY):
+    os.makedirs(UPLOAD_DIRECTORY)
+
+IMAGE_DIRECTORY = UPLOAD_DIRECTORY  # Use uploaded images directory
 MAX_IMAGES = 5
 
 try:
@@ -106,6 +104,7 @@ def start_motion():
             logger.info("Motion control started")
             return jsonify({'status': 'started', 'success': True})
         elif not autonomous_logic:
+            logger.error("Hardware not initialized - cannot start motion")
             return jsonify({'status': 'error', 'message': 'Hardware not initialized', 'success': False}), 500
         else:
             return jsonify({'status': 'already_running', 'success': True})
@@ -150,6 +149,8 @@ def images():
     """Get latest captured images"""
     try:
         latest_images = get_latest_images()
+        if not latest_images:
+            logger.warning("No images found in IMAGE_DIRECTORY or directory missing")
         return jsonify({
             'images': latest_images,
             'count': len(latest_images),
@@ -167,6 +168,27 @@ def serve_image(filename):
     except Exception as e:
         logger.error(f"Error serving image {filename}: {e}")
         return jsonify({'error': 'Image not found', 'success': False}), 404
+
+from werkzeug.utils import secure_filename
+from flask import request
+
+@app.route('/upload_image', methods=['POST'])
+def upload_image():
+    """Endpoint to receive image uploads from ESP32"""
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'message': 'No image part in the request'}), 400
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'No selected file'}), 400
+    filename = secure_filename(file.filename)
+    save_path = os.path.join(IMAGE_DIRECTORY, filename)
+    try:
+        file.save(save_path)
+        logger.info(f"Received and saved image: {filename}")
+        return jsonify({'success': True, 'message': f'Image {filename} uploaded successfully'})
+    except Exception as e:
+        logger.error(f"Failed to save uploaded image {filename}: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.errorhandler(404)
 def not_found(error):
