@@ -27,8 +27,12 @@ fi
 
 # Create virtual environment and install Python dependencies
 echo "Setting up Python environment..."
-python3 -m venv venv
-source venv/bin/activate
+if ! python3 -m venv venv; then
+    echo "Error: Failed to create virtual environment"
+    exit 1
+fi
+
+source venv/bin/activate || { echo "Error: Failed to activate virtual environment"; exit 1; }
 pip install --upgrade pip setuptools wheel
 
 # Install Python packages with better error handling
@@ -87,15 +91,19 @@ fi
 # Create systemd service for auto-start (only on Raspberry Pi)
 if grep -q "Raspberry Pi" /proc/cpuinfo; then
     echo "Creating systemd service..."
-    sudo tee /etc/systemd/system/underwater-robot.service > /dev/null << EOL
+    SERVICE_PATH="/etc/systemd/system/underwater-robot.service"
+    VENV_PATH="$(pwd)/venv"
+    APP_PATH="$(pwd)/rpi/app.py"
+    USER_NAME="$USER"
+    sudo tee $SERVICE_PATH > /dev/null << EOL
 [Unit]
 Description=Autonomous Underwater Robot Service
 After=network.target
 
 [Service]
-ExecStart=$(pwd)/venv/bin/python $(pwd)/rpi/app.py
+ExecStart=$VENV_PATH/bin/python $APP_PATH
 WorkingDirectory=$(pwd)
-User=$USER
+User=$USER_NAME
 Environment=PYTHONPATH=$(pwd)
 Restart=always
 

@@ -7,33 +7,33 @@ const App: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
-  const startRobot = async () => {
+  const startDrone = async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/start`, { method: 'POST' });
       if (response.ok) {
         setIsRunning(true);
-        setStatusMessage('Robot started');
+        setStatusMessage('Drone started');
       } else {
         const data = await response.json();
-        setStatusMessage(`Failed to start the robot: ${data.message || 'Unknown error'}`);
+        setStatusMessage(`Failed to start the drone: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
-      setStatusMessage('Error starting the robot');
+      setStatusMessage('Error starting the drone');
     }
   };
 
-  const stopRobot = async () => {
+  const stopDrone = async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/stop`, { method: 'POST' });
       if (response.ok) {
         setIsRunning(false);
-        setStatusMessage('Robot stopped');
+        setStatusMessage('Drone stopped');
       } else {
         const data = await response.json();
-        setStatusMessage(`Failed to stop the robot: ${data.message || 'Unknown error'}`);
+        setStatusMessage(`Failed to stop the drone: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
-      setStatusMessage('Error stopping the robot');
+      setStatusMessage('Error stopping the drone');
     }
   };
 
@@ -51,35 +51,17 @@ const App: React.FC = () => {
     }
   };
 
-  const fetchStatus = async () => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/status`);
-      if (response.ok) {
-        const data = await response.json();
-        setIsRunning(data.motion_running);
-      }
-    } catch (error) {
-      // Ignore status fetch errors
-    }
-  };
-
   useEffect(() => {
     fetchImages();
-    fetchStatus();
-    const interval = setInterval(() => {
-      fetchImages();
-      fetchStatus();
-    }, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f0f8ff', color: '#333' }}>
-      <h1 style={{ color: '#007acc' }}>Underwater Robot Dashboard</h1>
+      <h1 style={{ color: '#007acc' }}>Underwater Drone Dashboard</h1>
       <div style={{ marginBottom: '10px', minHeight: '24px' }}>{statusMessage}</div>
       <div style={{ marginBottom: '20px' }}>
         <button
-          onClick={startRobot}
+          onClick={startDrone}
           disabled={isRunning}
           style={{
             marginRight: '10px',
@@ -94,7 +76,7 @@ const App: React.FC = () => {
           Start
         </button>
         <button
-          onClick={stopRobot}
+          onClick={stopDrone}
           disabled={!isRunning}
           style={{
             backgroundColor: !isRunning ? '#a0a0a0' : '#dc3545',
@@ -108,10 +90,10 @@ const App: React.FC = () => {
           Stop
         </button>
       </div>
-      <h2 style={{ color: '#007acc' }}>Captured Images</h2>
+      <h2 style={{ color: '#007acc' }}>Latest Images from ESP32-CAM</h2>
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
         {images.length === 0 && <p>No images available</p>}
-        {images.map((imgUrl, index) => (
+        {images.slice(0, 5).map((imgUrl, index) => (
           <img
             key={index}
             src={`${BACKEND_URL}/images/${imgUrl}`}

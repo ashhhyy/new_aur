@@ -18,8 +18,13 @@ logger = logging.getLogger(__name__)
 
 # Force use of real hardware modules for actual drone control
 logger.info("Forcing use of real hardware modules for drone control")
-from motor_control import MotorControl
-from sensors import MPU6050, UltrasonicSensor
+
+try:
+    from sensors import MPU6050, UltrasonicSensor
+except ImportError as e:
+    logger.warning(f"Failed to import sensors module: {e}")
+    from sensors_mock import MPU6050, UltrasonicSensor
+
 from autonomous_logic import AutonomousLogic
 
 app = Flask(__name__)
@@ -38,20 +43,21 @@ if not os.path.exists(UPLOAD_DIRECTORY):
 IMAGE_DIRECTORY = UPLOAD_DIRECTORY  # Use uploaded images directory
 MAX_IMAGES = 5
 
+from motor_control import MotorControl
+from sensors import MPU6050, UltrasonicSensor
+from autonomous_logic import AutonomousLogic
+
+motor_control = MotorControl()
+mpu6050 = MPU6050()
+front_sensor = UltrasonicSensor(trigger_pin=5, echo_pin=25)
+back_sensor = UltrasonicSensor(trigger_pin=7, echo_pin=8)
+bottom_sensor = UltrasonicSensor(trigger_pin=20, echo_pin=21)
+
 try:
-    # Initialize hardware components
-    motor_control = MotorControl()
-    mpu6050 = MPU6050()
-    front_sensor = UltrasonicSensor(trigger_pin=5, echo_pin=25)
-    back_sensor = UltrasonicSensor(trigger_pin=7, echo_pin=8)
-    bottom_sensor = UltrasonicSensor(trigger_pin=20, echo_pin=21)
-    
     autonomous_logic = AutonomousLogic(motor_control, mpu6050, front_sensor, back_sensor, bottom_sensor)
-    logger.info("Hardware components initialized successfully")
+    logger.info("AutonomousLogic initialized successfully")
 except Exception as e:
-    logger.error(f"Failed to initialize hardware: {e}")
-    # Create mock objects for development/testing
-    motor_control = None
+    logger.error(f"Failed to initialize AutonomousLogic: {e}")
     autonomous_logic = None
 
 def autonomous_run():

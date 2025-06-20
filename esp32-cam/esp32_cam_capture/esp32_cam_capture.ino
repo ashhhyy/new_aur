@@ -3,6 +3,7 @@
 #include "SD_MMC.h"
 #include "Arduino.h"
 #include <WiFi.h>
+#include <HTTPClient.h>
 
 #define PWDN_GPIO_NUM     32
 #define RESET_GPIO_NUM    -1
@@ -25,6 +26,9 @@
 // WiFi credentials
 const char* ssid = "RC2.4G";
 const char* password = "vPs1234!";
+
+// Backend server URL
+const char* backend_url = "http://192.168.100.216:5000/upload_image";
 
 void setup() {
   Serial.begin(115200);
@@ -104,15 +108,34 @@ void loop() {
   }
 
   // Generate filename with timestamp
-  String path = "/image_" + String(millis()) + ".jpg";
+  String filename = "/image_" + String(millis()) + ".jpg";
 
-  // Save to SD card
-  File file = SD_MMC.open(path.c_str(), FILE_WRITE);
+  // Upload image to backend
+  if(WiFi.status() == WL_CONNECTED){
+    HTTPClient http;
+    http.begin(backend_url);
+    http.addHeader("Content-Type", "image/jpeg");
+
+    int httpResponseCode = http.POST(fb->buf, fb->len);
+
+    if(httpResponseCode > 0){
+      String response = http.getString();
+      Serial.printf("Image uploaded, response code: %d, response: %s\n", httpResponseCode, response.c_str());
+    } else {
+      Serial.printf("Error uploading image: %s\n", http.errorToString(httpResponseCode).c_str());
+    }
+    http.end();
+  } else {
+    Serial.println("WiFi not connected, cannot upload image");
+  }
+
+  // Save to SD card as fallback
+  File file = SD_MMC.open(filename.c_str(), FILE_WRITE);
   if(!file){
     Serial.println("Failed to open file in writing mode");
   } else {
     file.write(fb->buf, fb->len);
-    Serial.printf("Saved file to path: %s\n", path.c_str());
+    Serial.printf("Saved file to path: %s\n", filename.c_str());
   }
   file.close();
   esp_camera_fb_return(fb);

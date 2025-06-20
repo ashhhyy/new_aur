@@ -4,7 +4,10 @@ Controls 4 motors independently: left/right for movement and front/back for vert
 Each L298N driver controls 2 motors using all 4 inputs (IN1-IN4) and both enables (ENA, ENB).
 """
 
-import RPi.GPIO as GPIO
+try:
+    import RPi.GPIO as GPIO
+except ImportError:
+    raise ImportError("RPi.GPIO module not found. Please install it for Raspberry Pi hardware.")
 import time
 
 class MotorControl:
