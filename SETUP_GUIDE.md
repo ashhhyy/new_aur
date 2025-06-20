@@ -106,14 +106,15 @@
 
 4. Install repository:
    ```bash
-   git clone https://github.com/yourusername/autonomous-underwater-robot.git
+   git clone https://github.com/ashhhyy/new_aur.git
    cd autonomous-underwater-robot
    chmod +x setup.sh
    ./setup.sh
    ```
 
    **Note**: The setup script will automatically:
-   - Install Python packages from requirements.txt
+   - Install system dependencies for Python builds
+   - Create Python virtual environment and install Python packages from requirements.txt
    - Configure hardware permissions with error handling
 
 ### 2. ESP32-CAM Programming
@@ -136,8 +137,8 @@
 
 1. Start Raspberry Pi services:
    ```bash
-   cd rpi
-   python3 app.py
+   source venv/bin/activate
+   python rpi/app.py
    ```
 
 2. Power up ESP32-CAM:
@@ -145,8 +146,15 @@
    - Check SD card for saved images
 
 3. Access web dashboard:
-   - Open browser to http://<raspberry_pi_ip>:5000
-   - Use dashboard to control robot
+   - If you have the web-dashboard frontend set up, navigate to the web-dashboard directory
+   - Run `npm install` to install dependencies
+   - Run `npm start` to launch the React development server
+   - Open browser to http://<raspberry_pi_ip>:3000 to access the dashboard
+   python rpi/app.py
+   python rpi/app.py
+   python rpi/app.py
+   - Upload sketch
+   # Navigate to Interface Options -> I2C -> Enable
 
 ## Testing
 

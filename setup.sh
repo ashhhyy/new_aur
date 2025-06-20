@@ -7,7 +7,12 @@ if ! grep -q "Raspberry Pi" /proc/cpuinfo; then
     echo "Warning: This script is designed for Raspberry Pi. Some features may not work on other systems."
 fi
 
-# Install Node.js and npm if not present
+# Update package lists and install system dependencies for Python builds
+echo "Installing system dependencies..."
+sudo apt update
+sudo apt install -y build-essential python3-dev python3-pip pkg-config
+
+# Install Node.js and npm if not present (optional, can be removed if not using web-dashboard)
 echo "Checking Node.js and npm installation..."
 if ! command -v node &> /dev/null; then
     echo "Installing Node.js and npm..."
@@ -24,7 +29,7 @@ fi
 echo "Setting up Python environment..."
 python3 -m venv venv
 source venv/bin/activate
-pip install --upgrade pip
+pip install --upgrade pip setuptools wheel
 
 # Install Python packages with better error handling
 echo "Installing Python packages..."
@@ -39,12 +44,16 @@ fi
 
 # Setup web dashboard
 echo "Setting up web dashboard..."
-cd web-dashboard
-if ! npm install; then
-    echo "Error: npm install failed. Please check your Node.js installation."
-    exit 1
+if [ -d "web-dashboard" ]; then
+    cd web-dashboard
+    if ! npm install; then
+        echo "Error: npm install failed. Please check your Node.js installation."
+        exit 1
+    fi
+    cd ..
+else
+    echo "Warning: web-dashboard directory not found, skipping frontend setup."
 fi
-cd ..
 
 # Create necessary directories
 echo "Creating necessary directories..."
@@ -101,5 +110,5 @@ fi
 
 echo "Setup complete!"
 echo "To start the application:"
-echo "1. Flask API: source venv/bin/activate && python rpi/app.py"
-echo "2. Web Dashboard: cd web-dashboard && npm start"
+echo "1. Activate Python environment: source venv/bin/activate"
+echo "2. Run Flask API: python rpi/app.py"
