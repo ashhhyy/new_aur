@@ -113,8 +113,7 @@
    ```
 
    **Note**: The setup script will automatically:
-   - Install Node.js and npm if not present
-   - Handle Python package installation with fallback options
+   - Install Python packages from requirements.txt
    - Configure hardware permissions with error handling
 
 ### 2. ESP32-CAM Programming
@@ -131,15 +130,6 @@
    - Upload sketch
    ```
 
-### 3. Web Dashboard Setup
-1. Install Node.js and npm
-2. Setup dashboard:
-   ```bash
-   cd web-dashboard
-   npm install
-   npm start
-   ```
-
 ## Running the System
 
 ### On Raspberry Pi (Production)
@@ -147,7 +137,7 @@
 1. Start Raspberry Pi services:
    ```bash
    cd rpi
-   python app.py
+   python3 app.py
    ```
 
 2. Power up ESP32-CAM:
@@ -155,65 +145,8 @@
    - Check SD card for saved images
 
 3. Access web dashboard:
-   - Open browser to http://localhost:3000
+   - Open browser to http://<raspberry_pi_ip>:5000
    - Use dashboard to control robot
-
-### On PC (Development/Testing)
-
-The project includes mock modules that simulate hardware components, allowing you to test and develop the web interface on a PC without requiring actual hardware.
-
-#### Prerequisites
-1. Python 3.7 or higher
-2. Node.js and npm (download from https://nodejs.org/)
-3. Git (for cloning the repository)
-
-#### Option 1: Using run_on_pc.py (Cross-platform)
-```bash
-# Activate virtual environment first (if using one)
-python run_on_pc.py
-```
-This script will:
-1. Detect your operating system
-2. Start the Flask backend with mock hardware
-3. Try multiple methods to start the React frontend
-4. Provide manual instructions if automatic startup fails
-
-#### Option 2: Using run_on_pc_improved.bat (Windows)
-```bash
-# Simply double-click run_on_pc_improved.bat
-# Or run from command prompt:
-run_on_pc_improved.bat
-```
-The batch file will:
-1. Check for Node.js and npm installation
-2. Display Node.js and npm versions
-3. Activate virtual environment if available
-4. Start Flask backend in a new window
-5. Install React dependencies if needed
-6. Start React frontend in a new window
-
-#### Manual Start
-1. Start Flask backend with mock modules:
-   ```bash
-   cd rpi
-   python app.py
-   ```
-   The app will automatically detect it's running on a PC and use mock hardware modules.
-
-2. Start React frontend:
-   ```bash
-   cd web-dashboard
-   npm start
-   ```
-
-3. Access the web interface:
-   - Backend API: http://localhost:5000
-   - Frontend Dashboard: http://localhost:3000
-
-Note: When running on PC, all hardware functions (motors, sensors) are simulated. This is useful for:
-- Developing and testing the web interface
-- Testing autonomous logic algorithms
-- Debugging without requiring physical hardware
 
 ## Testing
 
@@ -264,10 +197,7 @@ pip install --no-deps Flask==2.3.3
 
 **Node.js/npm Not Found:**
 ```bash
-# The setup script now installs Node.js automatically
-# If manual installation is needed:
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
+# Node.js and npm are not required for Raspberry Pi deployment after frontend removal
 ```
 
 **SPI Module Not Found:**
@@ -289,21 +219,6 @@ lsmod | grep spi
 - Run i2cdetect to check MPU6050: `sudo i2cdetect -y 1`
 - Check ultrasonic sensor wiring and power (5V required)
 - Verify power supply voltages with multimeter
-
-### 3. Software Issues
-
-**Communication Issues:**
-- Check network connectivity: `ping localhost`
-- Verify Flask server is running: `ps aux | grep python`
-- Check web dashboard console for errors (F12 in browser)
-- Ensure ports 5000 (Flask) and 3000 (React) are available
-
-**Permission Issues:**
-```bash
-# Add user to required groups:
-sudo usermod -a -G gpio,i2c,spi $USER
-# Then logout and login again
-```
 
 ## Safety Checks
 

@@ -3,7 +3,7 @@ Flask web app for control and dashboard.
 Provides start/stop motion control and displays latest images.
 """
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_from_directory
 from flask_cors import CORS
 import threading
 import time
@@ -158,6 +158,15 @@ def images():
     except Exception as e:
         logger.error(f"Error getting images: {e}")
         return jsonify({'images': [], 'count': 0, 'success': False, 'message': str(e)})
+
+@app.route('/images/<filename>')
+def serve_image(filename):
+    """Serve image files from IMAGE_DIRECTORY"""
+    try:
+        return send_from_directory(IMAGE_DIRECTORY, filename)
+    except Exception as e:
+        logger.error(f"Error serving image {filename}: {e}")
+        return jsonify({'error': 'Image not found', 'success': False}), 404
 
 @app.errorhandler(404)
 def not_found(error):
